@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Đăng ký / Đăng nhập</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f4f4; }
+.auth-container {
+  max-width: 360px; margin: 20px auto; padding: 20px;
+  border-radius: 12px; background: #fff;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.auth-container h2 { text-align: center; margin-bottom: 15px; }
+.auth-container input {
+  width: 100%; padding: 10px; margin: 6px 0;
+  border: 1px solid #ccc; border-radius: 6px;
+}
+.auth-container button {
+  width: 48%; padding: 10px; margin: 6px 1%;
+  border: none; border-radius: 6px; cursor: pointer; color: #fff;
+}
+.auth-container button:first-child { background: #28a745; }
+.auth-container button:nth-child(2) { background: #007bff; }
+.logout-btn { background: #f44336 !important; width: 100% !important; }
+.popup {
+  position: fixed; top: 20px; right: 20px;
+  background: #4caf50; color: white; padding: 10px 15px;
+  border-radius: 8px; display: none; z-index: 9999;
+}
+.popup.error { background: #f44336; }
+</style>
+</head>
+<body>
+
+<div class="auth-container" id="authBox">
+  <h2>Đăng ký / Đăng nhập</h2>
+  <input type="text" id="name" placeholder="Họ và tên">
+  <input type="tel" id="phone" placeholder="Số điện thoại">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Mật khẩu">
+  <button onclick="signUp()">Đăng ký</button>
+  <button onclick="signIn()">Đăng nhập</button>
+</div>
+
+<div class="auth-container" id="userBox" style="display:none;">
+  <h2>Xin chào!</h2>
+  <p id="status">Đang tải...</p>
+  <button class="logout-btn" onclick="signOutUser()">Đăng xuất</button>
+</div>
+
+<div class="popup" id="popupMsg"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+  // Cấu hình Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBv5mF4qGj6LekUX2bhK7rRvpz3VDEajDo",
+    authDomain: "batdongsan8h-239ef.firebaseapp.com",
+    projectId: "batdongsan8h-239ef",
+    storageBucket: "batdongsan8h-239ef.firebasestorage.app",
+    messagingSenderId: "185660293013",
+    appId: "1:185660293013:web:ea231adb81d0b9507d409c"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Link Google Sheets API
+  const SHEET_API = "https://script.google.com/macros/s/AKfycbwHodGj77vfggMWebFiOxf5G3Jchmi1FQsnswvGTS-Gob0U7PwLVKKmR7C6clSDczDS/exec";
+
+  function showPopup(msg, isError = false) {
+    const popup = document.getElementById("popupMsg");
+    popup.textContent = msg;
+    popup.className = "popup" + (isError ? " error" : "");
+    popup.style.display = "block";
+    setTimeout(() => popup.style.display = "none", 3000);
+  }
+
+  // Đăng ký
+  window.signUp = async function() {
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    if (!name || !phone || !email || !password) {
+      showPopup("Vui lòng điền đầy đủ thông tin", true);
+      return;
+    }
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Lưu Firestore
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        name: name, phone: phone, email: email, createdAt: serverTimestamp()
+      });
+      // Gửi Google Sheets
+      await fetch(SHEET_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          email: email,
+          uid: userCredential.user.uid
+        })
+      });
+      showPopup("Đăng ký thành công!");
+    } catch (error) {
+      showPopup(error.message, true);
+    }
+  };
+
+  // Đăng nhập
+  window.signIn = async function() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    if (!email || !password) {
+      showPopup("Nhập email và mật khẩu", true);
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      showPopup("Đăng nhập thành công!");
+    } catch (error) {
+      showPopup(error.message, true);
+    }
+  };
+
+  // Đăng xuất
+  window.signOutUser = function() {
+    signOut(auth);
+  };
+
+  // Theo dõi trạng thái
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      document.getElementById("authBox").style.display = "none";
+      document.getElementById("userBox").style.display = "block";
+      document.getElementById("status").innerText = `Đã đăng nhập: ${user.email}`;
+    } else {
+      document.getElementById("authBox").style.display = "block";
+      document.getElementById("userBox").style.display = "none";
+    }
+  });
+</script>
+</body>
+</html>
