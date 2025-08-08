@@ -145,5 +145,14 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
     }
   });
 </script>
+  <script>
+  // Gửi chiều cao nội dung sang trang cha (Blogger)
+  function sendHeight() {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: 'resize', height: height }, '*');
+  }
+  window.onload = sendHeight;
+  window.onresize = sendHeight;
+</script>
 </body>
 </html>
