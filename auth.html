@@ -1,34 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Đăng ký / Đăng nhập</title>
-<style>
-body { font-family: Arial, sans-serif; background: #f4f4f4; }
-.auth-container {
-  max-width: 360px; margin: 20px auto; padding: 20px;
-  border-radius: 12px; background: #fff;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.auth-container h2 { text-align: center; margin-bottom: 15px; }
-.auth-container input {
-  width: 100%; padding: 10px; margin: 6px 0;
-  border: 1px solid #ccc; border-radius: 6px;
-}
-.auth-container button {
-  width: 48%; padding: 10px; margin: 6px 1%;
-  border: none; border-radius: 6px; cursor: pointer; color: #fff;
-}
-.auth-container button:first-child { background: #28a745; }
-.auth-container button:nth-child(2) { background: #007bff; }
-.logout-btn { background: #f44336 !important; width: 100% !important; }
-.popup {
-  position: fixed; top: 20px; right: 20px;
-  background: #4caf50; color: white; padding: 10px 15px;
-  border-radius: 8px; display: none; z-index: 9999;
-}
-.popup.error { background: #f44336; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng ký / Đăng nhập</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .auth-container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .auth-container h2 { text-align: center; margin-bottom: 20px; }
+    .auth-container input {
+      width: 100%; padding: 10px; margin: 8px 0;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    .auth-container button {
+      width: 48%; padding: 10px; margin-top: 10px;
+      border: none; border-radius: 5px; cursor: pointer;
+      background: #007bff; color: white; font-weight: bold;
+    }
+    .auth-container button:hover { background: #0056b3; }
+    .logout-btn { background: #dc3545 !important; }
+    .popup {
+      display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: #28a745; color: white; padding: 10px 20px;
+      border-radius: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 9999;
+    }
+    .popup.error { background: #dc3545; }
+  </style>
 </head>
 <body>
 
@@ -38,8 +43,10 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
   <input type="tel" id="phone" placeholder="Số điện thoại">
   <input type="email" id="email" placeholder="Email">
   <input type="password" id="password" placeholder="Mật khẩu">
-  <button onclick="signUp()">Đăng ký</button>
-  <button onclick="signIn()">Đăng nhập</button>
+  <div style="display: flex; justify-content: space-between;">
+    <button onclick="signUp()">Đăng ký</button>
+    <button onclick="signIn()">Đăng nhập</button>
+  </div>
 </div>
 
 <div class="auth-container" id="userBox" style="display:none;">
@@ -64,13 +71,13 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
     messagingSenderId: "185660293013",
     appId: "1:185660293013:web:ea231adb81d0b9507d409c"
   };
+
+  // Khởi tạo Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Link Google Sheets API
-  const SHEET_API = "https://script.google.com/macros/s/AKfycbwHodGj77vfggMWebFiOxf5G3Jchmi1FQsnswvGTS-Gob0U7PwLVKKmR7C6clSDczDS/exec";
-
+  // Hàm hiển thị popup
   function showPopup(msg, isError = false) {
     const popup = document.getElementById("popupMsg");
     popup.textContent = msg;
@@ -85,18 +92,25 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
     const phone = document.getElementById("phone").value.trim();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+
     if (!name || !phone || !email || !password) {
       showPopup("Vui lòng điền đầy đủ thông tin", true);
       return;
     }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Lưu Firestore
+
+      // Lưu vào Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
-        name: name, phone: phone, email: email, createdAt: serverTimestamp()
+        name: name,
+        phone: phone,
+        email: email,
+        createdAt: serverTimestamp()
       });
-      // Gửi Google Sheets
-      await fetch(SHEET_API, {
+
+      // Gửi dữ liệu qua Google Sheets API
+      fetch("https://script.google.com/macros/s/AKfycbwHodGj77vfggMWebFiOxf5G3Jchmi1FQsnswvGTS-Gob0U7PwLVKKmR7C6clSDczDS/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -105,7 +119,11 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
           email: email,
           uid: userCredential.user.uid
         })
-      });
+      })
+      .then(res => res.json())
+      .then(data => console.log("Đã lưu Google Sheets:", data))
+      .catch(err => console.error("Lỗi lưu Google Sheets:", err));
+
       showPopup("Đăng ký thành công!");
     } catch (error) {
       showPopup(error.message, true);
@@ -116,10 +134,12 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
   window.signIn = async function() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+
     if (!email || !password) {
       showPopup("Nhập email và mật khẩu", true);
       return;
     }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       showPopup("Đăng nhập thành công!");
@@ -145,8 +165,9 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
     }
   });
 </script>
-  <script>
-  // Gửi chiều cao nội dung sang trang cha (Blogger)
+
+<!-- Script auto-resize iframe -->
+<script>
   function sendHeight() {
     const height = document.body.scrollHeight;
     window.parent.postMessage({ type: 'resize', height: height }, '*');
@@ -154,5 +175,6 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
   window.onload = sendHeight;
   window.onresize = sendHeight;
 </script>
+
 </body>
 </html>
