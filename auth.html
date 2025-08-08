@@ -72,12 +72,10 @@
     appId: "1:185660293013:web:ea231adb81d0b9507d409c"
   };
 
-  // Khởi tạo Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Hàm hiển thị popup
   function showPopup(msg, isError = false) {
     const popup = document.getElementById("popupMsg");
     popup.textContent = msg;
@@ -86,7 +84,6 @@
     setTimeout(() => popup.style.display = "none", 3000);
   }
 
-  // Đăng ký
   window.signUp = async function() {
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
@@ -101,7 +98,6 @@
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Lưu vào Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         name: name,
         phone: phone,
@@ -109,7 +105,7 @@
         createdAt: serverTimestamp()
       });
 
-      // Gửi dữ liệu qua Google Sheets API
+      console.log("📤 Đang gửi dữ liệu sang Google Sheets API...");
       fetch("https://script.google.com/macros/s/AKfycbwHodGj77vfggMWebFiOxf5G3Jchmi1FQsnswvGTS-Gob0U7PwLVKKmR7C6clSDczDS/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,8 +117,12 @@
         })
       })
       .then(res => res.json())
-      .then(data => console.log("Đã lưu Google Sheets:", data))
-      .catch(err => console.error("Lỗi lưu Google Sheets:", err));
+      .then(data => {
+        console.log("✅ Google Sheets phản hồi:", data);
+      })
+      .catch(err => {
+        console.error("❌ Lỗi khi gửi Google Sheets:", err);
+      });
 
       showPopup("Đăng ký thành công!");
     } catch (error) {
@@ -130,7 +130,6 @@
     }
   };
 
-  // Đăng nhập
   window.signIn = async function() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
@@ -148,12 +147,10 @@
     }
   };
 
-  // Đăng xuất
   window.signOutUser = function() {
     signOut(auth);
   };
 
-  // Theo dõi trạng thái
   onAuthStateChanged(auth, user => {
     if (user) {
       document.getElementById("authBox").style.display = "none";
@@ -166,7 +163,7 @@
   });
 </script>
 
-<!-- Script auto-resize iframe -->
+<!-- Auto-resize -->
 <script>
   function sendHeight() {
     const height = document.body.scrollHeight;
