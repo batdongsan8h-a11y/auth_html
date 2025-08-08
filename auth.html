@@ -95,20 +95,17 @@ body { font-family: Arial, sans-serif; background: #f4f4f4; }
       await setDoc(doc(db, "users", userCredential.user.uid), {
         name: name, phone: phone, email: email, createdAt: serverTimestamp()
       });
-      // Gửi Google Sheets và kiểm tra phản hồi
-const response = await fetch(SHEET_API, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    name: name,
-    phone: phone,
-    email: email,
-    uid: userCredential.user.uid
-  })
-});
-const result = await response.text();
-console.log("Gửi Sheets thành công: ", result);
-
+      // Gửi Google Sheets
+      await fetch(SHEET_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          email: email,
+          uid: userCredential.user.uid
+        })
+      });
       showPopup("Đăng ký thành công!");
     } catch (error) {
       showPopup(error.message, true);
