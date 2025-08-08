@@ -98,13 +98,12 @@
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        name: name,
-        phone: phone,
-        email: email,
-        createdAt: serverTimestamp()
-      });
-
+     console.log("Dữ liệu chuẩn bị ghi Firestore:", {
+  name: name,
+  phone: phone,
+  email: email,
+  createdAt: serverTimestamp()
+});
       console.log("📤 Đang gửi dữ liệu sang Google Sheets API...");
       fetch("https://script.google.com/macros/s/AKfycbwHodGj77vfggMWebFiOxf5G3Jchmi1FQsnswvGTS-Gob0U7PwLVKKmR7C6clSDczDS/exec", {
         method: "POST",
